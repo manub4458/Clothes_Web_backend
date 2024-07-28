@@ -1,0 +1,165 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       String    @id @default(auto()) @map("_id") @db.ObjectId
+  email    String    @unique
+  emailVerified DateTime?
+  name     String?
+  password String?
+  image         String?
+  address  Address[]
+  orders   Order[]
+  accounts Account[]
+}
+
+model Account {
+  id                String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId            String  @db.ObjectId
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.String
+  access_token      String? @db.String
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.String
+  session_state     String?
+ 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+ 
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+ 
+  @@unique([provider, providerAccountId])
+}
+model VerificationToken {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  email String
+  token      String @unique
+  expires    DateTime
+ 
+  @@unique([email, token])
+}
+model PasswordResetToken {
+  id      String   @id @default(auto()) @map("_id") @db.ObjectId
+  email   String
+  token   String   @unique
+  expires DateTime
+
+  @@unique([email, token])
+}
+
+model Address {
+  id         String @id @default(auto()) @map("_id") @db.ObjectId
+  street     String
+  city       String
+  postalCode String
+  country    String
+  user       User   @relation(fields: [userId], references: [id])
+  userId     String @db.ObjectId
+}
+
+model ShippingAddress {
+  id         String @id @default(auto()) @map("_id") @db.ObjectId
+  street     String
+  city       String
+  postalCode String
+  country    String
+  userId     String @db.ObjectId
+}
+
+model Category {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  product   Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Size {
+  id         String    @id @default(auto()) @map("_id") @db.ObjectId
+  value      String
+  productIds String[]  @db.ObjectId
+  product    Product[] @relation(fields: [productIds], references: [id])
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+model Wishlist {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String   @unique @db.ObjectId
+  productIds String[] @db.ObjectId
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Discount {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  value     String
+  product   Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Product {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  brand         String
+  name          String
+  about         String
+  image         String[]
+  specification String
+  price         Int
+  gender        Gender
+  discountId    String   @db.ObjectId
+  discount      Discount @relation(fields: [discountId], references: [id])
+  categoryId    String   @db.ObjectId
+  category      Category @relation(fields: [categoryId], references: [id])
+  sizeIds       String[] @db.ObjectId
+  size          Size[]   @relation(fields: [sizeIds], references: [id])
+}
+
+model Order {
+  id         String       @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String       @db.ObjectId
+  user       User         @relation(fields: [userId], references: [id])
+  isPaid     Boolean      @default(false)
+  shippingId String
+  orderItem  OrderItems[]
+  createadAt DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+}
+
+model OrderItems {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  productId    String   @db.ObjectId
+  name         String
+  about        String
+  size         String
+  productImage String
+  isCancelled  Boolean  @default(false)
+  quantity     Int
+  price        Float
+  orderId      String   @db.ObjectId
+  order        Order    @relation(fields: [orderId], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
